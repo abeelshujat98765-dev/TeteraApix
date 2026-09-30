@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tetra Apix — Energy Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root {
+  --bg: #0a0b0d; --bg-2: #101114; --surface: #16181c;
+  --surface-2: #1c1f24; --surface-3: #242830;
+  --text: #f5f6f7; --text-2: #a8adb6; --text-3: #6d7480;
+  --line: rgba(255,255,255,.06); --line-2: rgba(255,255,255,.11);
+  --emerald: #00d68f; --emerald-2: #34e5a5; --emerald-soft: rgba(0,214,143,.10);
+  --gold: #e5b962; --gold-2: #f5cd7a; --gold-soft: rgba(229,185,98,.10);
+  --red: #ff4d5e; --red-2: #ff7585; --red-soft: rgba(255,77,94,.10);
+  --amber: #ffa726; --amber-soft: rgba(255,167,38,.10);
+  --blue: #3b82f6; --blue-soft: rgba(59,130,246,.10);
+  --purple: #7c5cff; --purple-soft: rgba(124,92,255,.10);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-font-smoothing: antialiased; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg); color: var(--text);
+  font-size: 14px; line-height: 1.5; min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(229,185,98,.06), transparent 40%),
+    radial-gradient(circle at 0% 100%, rgba(0,214,143,.04), transparent 40%);
+}
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(229,185,98,.4); }
+::selection { background: var(--gold); color: #000; }
+
+.wrap { max-width: 1500px; margin: 0 auto; padding: 26px 32px 60px; position: relative; z-index: 1; }
+
+/* TOPBAR */
+.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 26px; gap: 20px; flex-wrap: wrap;
+}
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand-mark {
+  width: 48px; height: 48px; border-radius: 13px;
+  background: linear-gradient(135deg, #00d68f, #0ea86f);
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 22px;
+  box-shadow: 0 8px 24px -6px rgba(0,214,143,.5);
+}
+.brand h1 { font-size: 21px; font-weight: 700; letter-spacing: -0.02em; }
+.brand p { font-size: 11px; color: var(--gold); letter-spacing: .16em; text-transform: uppercase; font-weight: 700; margin-top: 2px; }
+.topbar-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+.status-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 15px; background: var(--emerald-soft);
+  border: 1px solid rgba(0,214,143,.25); border-radius: 100px;
+  font-size: 11.5px; font-weight: 700; color: var(--emerald-2);
+}
+.status-pill.error { background: var(--red-soft); border-color: rgba(255,77,94,.3); color: var(--red-2); }
+.live-dot {
+  width: 6px; height: 6px; background: currentColor; border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.85)} }
+
+.btn {
+  padding: 10px 18px; border-radius: 10px;
+  font-size: 12.5px; font-weight: 600;
+  border: 1px solid transparent;
+  display: inline-flex; align-items: center; gap: 8px;
+  cursor: pointer; transition: all .2s var(--ease); font-family: inherit;
+  --ease: cubic-bezier(.22,1,.36,1);
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--emerald), #0ea86f);
+  color: white; box-shadow: 0 6px 18px -4px rgba(0,214,143,.5);
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 10px 24px -4px rgba(0,214,143,.6); }
+.btn-purple { background: linear-gradient(135deg, var(--purple), #6366f1); color: white; }
+.btn-purple:hover { transform: translateY(-1px); }
+.btn-ghost {
+  background: var(--surface); border-color: var(--line); color: var(--text-2);
+}
+.btn-ghost:hover { border-color: var(--line-2); color: var(--text); }
+
+/* GRID */
+.grid-main { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; margin-bottom: 16px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+/* METER */
+.meter-card {
+  background: linear-gradient(145deg, #1c1f24, #0f1114);
+  border: 1px solid var(--line-2); border-radius: 16px;
+  padding: 26px; position: relative; overflow: hidden;
+  box-shadow: 0 30px 60px -20px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.meter-card::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(0,214,143,.08), transparent 55%),
+    radial-gradient(circle at 90% 90%, rgba(229,185,98,.05), transparent 55%);
+  pointer-events: none;
+}
+.meter-brand {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 22px; position: relative; z-index: 1;
+}
+.meter-logo {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+  font-weight: 700; color: var(--text-3);
+}
+.meter-logo i { color: var(--emerald); font-size: 13px; }
+.meter-type {
+  font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+  font-weight: 700; padding: 5px 10px;
+  background: var(--emerald-soft); border: 1px solid rgba(0,214,143,.25);
+  border-radius: 100px; color: var(--emerald-2);
+}
+.meter-display {
+  background: #05110d; border: 2px solid #0a1f18; border-radius: 12px;
+  padding: 24px 20px; position: relative; z-index: 1; overflow: hidden;
+  box-shadow: inset 0 0 40px rgba(0,214,143,.08), inset 0 2px 10px rgba(0,0,0,.6);
+}
+.meter-display::before {
+  content: ''; position: absolute; inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,214,143,.025) 0 1px, transparent 1px 3px);
+  pointer-events: none;
+}
+.meter-digits {
+  font-family: 'Share Tech Mono', monospace;
+  display: flex; align-items: center; justify-content: center;
+  gap: 4px; position: relative; z-index: 2; user-select: none; flex-wrap: wrap;
+}
+.meter-digit {
+  background: linear-gradient(180deg, #0a1f18, #061510);
+  border: 1px solid rgba(0,214,143,.25); border-radius: 6px;
+  width: 50px; height: 74px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 44px; color: #34e5a5;
+  text-shadow: 0 0 12px rgba(52,229,165,.7), 0 0 24px rgba(52,229,165,.4);
+  position: relative; overflow: hidden;
+}
+.meter-digit::before {
+  content: ''; position: absolute; top: 50%; left: 0; right: 0;
+  height: 1px; background: rgba(0,0,0,.5); z-index: 1;
+}
+.meter-decimal {
+  font-family: 'Share Tech Mono', monospace; font-size: 44px;
+  color: #34e5a5; text-shadow: 0 0 12px rgba(52,229,165,.7);
+  margin: 0 2px; align-self: flex-end; padding-bottom: 6px;
+}
+.meter-unit-tag {
+  font-family: 'Share Tech Mono', monospace; font-size: 17px;
+  color: #34e5a5; margin-left: 12px; opacity: .85;
+  letter-spacing: .12em; align-self: flex-end; padding-bottom: 8px;
+}
+.meter-meta {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  margin-top: 22px; padding-top: 20px;
+  border-top: 1px dashed rgba(255,255,255,.06);
+  position: relative; z-index: 1;
+}
+.meter-meta-item .l {
+  font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--text-3); font-weight: 600; margin-bottom: 4px;
+}
+.meter-meta-item .v {
+  font-size: 14px; font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--text);
+}
+.meter-meta-item .v.mono { font-family: 'Share Tech Mono', monospace; letter-spacing: .04em; }
+.meter-live {
+  display: flex; align-items: center; gap: 8px; margin-top: 20px;
+  padding: 10px 14px; background: rgba(0,214,143,.06);
+  border: 1px solid rgba(0,214,143,.18); border-radius: 8px;
+  font-size: 11.5px; color: var(--emerald-2); font-weight: 600;
+  position: relative; z-index: 1;
+}
+.meter-live .live-dot {
+  width: 7px; height: 7px; background: var(--emerald-2); border-radius: 50%;
+  box-shadow: 0 0 10px var(--emerald-2);
+}
+.meter-live strong { font-family: 'Share Tech Mono', monospace; color: var(--text); margin-left: auto; font-size: 13px; }
+
+/* STATS */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 14px; padding: 18px; transition: all .3s;
+}
+.stat-card:hover { border-color: var(--line-2); transform: translateY(-2px); }
+.stat-card.gold { background: linear-gradient(155deg, rgba(229,185,98,.06), var(--surface) 55%); }
+.stat-card.emerald { background: linear-gradient(155deg, rgba(0,214,143,.06), var(--surface) 55%); }
+.stat-card.blue { background: linear-gradient(155deg, rgba(59,130,246,.06), var(--surface) 55%); }
+.stat-card.purple { background: linear-gradient(155deg, rgba(124,92,255,.06), var(--surface) 55%); }
+.stat-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.stat-label { font-size: 11.5px; color: var(--text-3); font-weight: 500; }
+.stat-icon {
+  width: 32px; height: 32px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; background: var(--surface-2);
+  color: var(--text-2); border: 1px solid var(--line);
+}
+.stat-card.gold .stat-icon { background: var(--gold-soft); color: var(--gold); border-color: rgba(229,185,98,.2); }
+.stat-card.emerald .stat-icon { background: var(--emerald-soft); color: var(--emerald); border-color: rgba(0,214,143,.2); }
+.stat-card.blue .stat-icon { background: var(--blue-soft); color: var(--blue); border-color: rgba(59,130,246,.2); }
+.stat-card.purple .stat-icon { background: var(--purple-soft); color: var(--purple); border-color: rgba(124,92,255,.2); }
+.stat-value {
+  font-size: 24px; font-weight: 700; letter-spacing: -0.03em;
+  line-height: 1; margin-bottom: 5px; font-variant-numeric: tabular-nums;
+  display: flex; align-items: baseline; gap: 4px;
+}
+.stat-value .unit { font-size: 12px; font-weight: 500; color: var(--text-3); }
+.stat-foot { font-size: 11.5px; color: var(--text-3); }
+
+/* CARD */
+.card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 14px; padding: 22px; margin-bottom: 16px;
+  position: relative; overflow: hidden;
+}
+.card-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 18px; gap: 16px; flex-wrap: wrap;
+}
+.card-title {
+  font-size: 15px; font-weight: 600; letter-spacing: -0.01em;
+  display: flex; align-items: center; gap: 8px;
+}
+.card-title i { color: var(--gold); font-size: 12px; }
+.card-sub { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+
+/* TABLE */
+.table-wrap { overflow-x: auto; margin: 0 -22px; padding: 0 22px; }
+.table { width: 100%; border-collapse: collapse; min-width: 720px; }
+.table th {
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: .14em;
+  color: var(--text-3); font-weight: 700; text-align: left;
+  padding: 0 0 12px; border-bottom: 1px solid var(--line);
+}
+.table td {
+  padding: 14px 0; border-bottom: 1px solid var(--line);
+  font-size: 13px; vertical-align: middle;
+}
+.table tr:last-child td { border-bottom: none; }
+.table tbody tr { transition: background .2s; }
+.table tbody tr:hover { background: rgba(255,255,255,.015); }
+.bill-id { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--gold-2); font-weight: 600; }
+.mono { font-family: 'Share Tech Mono', monospace; font-variant-numeric: tabular-nums; }
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 100px;
+  font-size: 10.5px; font-weight: 700;
+}
+.badge.demo { background: var(--purple-soft); color: var(--purple); }
+.badge.live { background: var(--emerald-soft); color: var(--emerald-2); }
+.badge .d { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+/* CHART */
+.chart-wrap { position: relative; height: 260px; margin: 0 -8px; }
+.chart-svg { width: 100%; height: 100%; display: block; }
+
+/* INSIGHTS */
+.insight {
+  padding: 14px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--surface-2); display: flex; gap: 12px;
+  margin-bottom: 10px; transition: all .2s;
+  position: relative; overflow: hidden;
+}
+.insight:last-child { margin-bottom: 0; }
+.insight:hover { border-color: var(--line-2); transform: translateX(3px); }
+.insight::before {
+  content: ''; position: absolute; left: 0; top: 20%; bottom: 20%;
+  width: 2px; border-radius: 0 2px 2px 0;
+}
+.insight.tip { border-color: rgba(229,185,98,.22); background: linear-gradient(135deg, rgba(229,185,98,.05), var(--surface-2)); }
+.insight.tip::before { background: var(--gold); box-shadow: 0 0 12px var(--gold); }
+.insight.success { border-color: rgba(0,214,143,.22); background: linear-gradient(135deg, rgba(0,214,143,.05), var(--surface-2)); }
+.insight.success::before { background: var(--emerald); box-shadow: 0 0 12px var(--emerald); }
+.insight.warning { border-color: rgba(255,167,38,.22); background: linear-gradient(135deg, rgba(255,167,38,.05), var(--surface-2)); }
+.insight.warning::before { background: var(--amber); box-shadow: 0 0 12px var(--amber); }
+.insight-icon {
+  width: 34px; height: 34px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0;
+}
+.insight.tip .insight-icon { background: var(--gold-soft); color: var(--gold); }
+.insight.success .insight-icon { background: var(--emerald-soft); color: var(--emerald-2); }
+.insight.warning .insight-icon { background: var(--amber-soft); color: var(--amber); }
+.insight-body { flex: 1; }
+.insight-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.insight-text { font-size: 11.5px; color: var(--text-3); line-height: 1.55; }
+
+/* EMPTY */
+.empty { text-align: center; padding: 70px 20px; color: var(--text-3); }
+.empty i { font-size: 56px; opacity: .25; margin-bottom: 20px; display: block; }
+.empty h3 { font-size: 18px; font-weight: 600; color: var(--text-2); margin-bottom: 8px; }
+.empty p { font-size: 13px; line-height: 1.6; max-width: 400px; margin: 0 auto 24px; }
+
+/* RESPONSIVE */
+@media (max-width: 1100px) {
+  .grid-main { grid-template-columns: 1fr; }
+  .grid-2 { grid-template-columns: 1fr; }
+}
+@media (max-width: 700px) {
+  .wrap { padding: 18px 16px 40px; }
+  .stats-grid { grid-template-columns: 1fr; }
+  .topbar { flex-direction: column; align-items: stretch; }
+  .topbar-actions { justify-content: space-between; }
+  .meter-digit { width: 38px; height: 58px; font-size: 32px; }
+  .meter-decimal { font-size: 32px; }
+  .meter-unit-tag { font-size: 14px; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark"><i class="fa-solid fa-bolt"></i></div>
+      <div>
+        <h1>Tetra Apix</h1>
+        <p>Energy Dashboard</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <div class="status-pill" id="statusPill">
+        <span class="live-dot"></span>
+        <span id="statusText">Connecting...</span>
+      </div>
+      <button class="btn btn-primary" onclick="sendDemo()">
+        <i class="fa-solid fa-gamepad"></i> Send Demo
+      </button>
+      <button class="btn btn-ghost" onclick="loadBills()">
+        <i class="fa-solid fa-rotate"></i> Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- EMPTY STATE -->
+  <div class="card empty" id="emptyState">
+    <i class="fa-solid fa-inbox"></i>
+    <h3>No bills yet</h3>
+    <p>Abhi koi data nahi hai. "Send Demo" button dabao ya extension se sync karo.</p>
+    <button class="btn btn-primary" onclick="sendDemo()">
+      <i class="fa-solid fa-gamepad"></i> Send Demo Data
+    </button>
+  </div>
+
+  <!-- MAIN CONTENT (hidden until data) -->
+  <div id="mainContent" style="display:none">
+
+    <!-- METER + STATS -->
+    <div class="grid-main">
+      <div class="meter-card">
+        <div class="meter-brand">
+          <div class="meter-logo"><i class="fa-solid fa-bolt"></i> LATEST METER READING</div>
+          <div class="meter-type" id="meterType">LIVE</div>
+        </div>
+        <div class="meter-display">
+          <div class="meter-digits" id="meterDigits"></div>
+        </div>
+        <div class="meter-meta">
+          <div class="meter-meta-item">
+            <div class="l">Bill Number</div>
+            <div class="v mono" id="metaBillNo">—</div>
+          </div>
+          <div class="meter-meta-item">
+            <div class="l">Last Updated</div>
+            <div class="v" id="metaTime">—</div>
+          </div>
+          <div class="meter-meta-item">
+            <div class="l">Total Records</div>
+            <div class="v" id="metaCount">—</div>
+          </div>
+          <div class="meter-meta-item">
+            <div class="l">Source</div>
+            <div class="v" id="metaSource">—</div>
+          </div>
+        </div>
+        <div class="meter-live">
+          <span class="live-dot"></span>
+          Auto-refreshing
+          <strong id="liveAmount">—</strong>
+        </div>
+      </div>
+
+      <div class="stats-grid" id="statsGrid"></div>
+    </div>
+
+    <!-- CHART -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title"><i class="fa-solid fa-chart-column"></i> Bill History</div>
+          <div class="card-sub">Amount per bill record</div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <svg class="chart-svg" id="chart" viewBox="0 0 1000 260" preserveAspectRatio="none"></svg>
+      </div>
+    </div>
+
+    <!-- TABLE + INSIGHTS -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title"><i class="fa-solid fa-list"></i> All Bills</div>
+            <div class="card-sub" id="tableSub">0 records</div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Bill No</th>
+                <th>Units</th>
+                <th>Amount</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title"><i class="fa-solid fa-lightbulb"></i> Insights</div>
+            <div class="card-sub">Auto-generated from your data</div>
+          </div>
+        </div>
+        <div id="insightsList"></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+const API = window.location.origin;
+
+/* ============================================================
+   LOAD DATA
+============================================================ */
+async function loadBills() {
+  try {
+    const res = await fetch(API + '/api/bills');
+    const data = await res.json();
+    setStatus('Connected', false);
+
+    if (!data.success || !data.bills || data.bills.length === 0) {
+      showEmpty();
+      return;
+    }
+
+    showData();
+    renderAll(data.bills);
+  } catch (err) {
+    console.error(err);
+    setStatus('Backend offline', true);
+  }
+}
+
+/* ============================================================
+   STATUS
+============================================================ */
+function setStatus(text, isError) {
+  document.getElementById('statusText').textContent = text;
+  document.getElementById('statusPill').className = 'status-pill' + (isError ? ' error' : '');
+}
+
+function showEmpty() {
+  document.getElementById('emptyState').style.display = 'block';
+  document.getElementById('mainContent').style.display = 'none';
+}
+
+function showData() {
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('mainContent').style.display = 'block';
+}
+
+/* ============================================================
+   RENDER EVERYTHING
+============================================================ */
+function renderAll(bills) {
+  const latest = bills[bills.length - 1];
+
+  // Meter display
+  const units = parseFloat(latest.units) || 0;
+  renderMeterDigits(units);
+
+  document.getElementById('metaBillNo').textContent = latest.billNumber || '—';
+  document.getElementById('metaTime').textContent = latest.timestamp
+    ? new Date(latest.timestamp).toLocaleString('en-PK', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+    : '—';
+  document.getElementById('metaCount').textContent = bills.length + ' records';
+  document.getElementById('metaSource').textContent = latest.isDemo || (latest.raw && latest.raw.isDemo) ? 'Demo' : 'Live';
+  document.getElementById('liveAmount').textContent = '₨' + Math.round(parseFloat(latest.amount) || 0).toLocaleString();
+
+  // Stats
+  renderStats(bills);
+
+  // Chart
+  renderChart(bills);
+
+  // Table
+  renderTable(bills);
+
+  // Insights
+  renderInsights(bills);
+}
+
+/* ============================================================
+   METER DIGITS
+============================================================ */
+function renderMeterDigits(num) {
+  const el = document.getElementById('meterDigits');
+  const str = num.toFixed(0);
+  const padded = str.padStart(3, '0');
+  let html = '';
+  padded.split('').forEach(d => {
+    html += '<div class="meter-digit">' + d + '</div>';
+  });
+  html += '<span class="meter-unit-tag">kWh</span>';
+  el.innerHTML = html;
+}
+
+/* ============================================================
+   STATS
+============================================================ */
+function renderStats(bills) {
+  const totalBills = bills.length;
+  const totalUnits = bills.reduce((s, b) => s + (parseFloat(b.units) || 0), 0);
+  const totalAmount = bills.reduce((s, b) => s + (parseFloat(b.amount) || 0), 0);
+  const avgAmount = totalAmount / totalBills || 0;
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card emerald">
+      <div class="stat-head">
+        <span class="stat-label">Total Bills</span>
+        <div class="stat-icon"><i class="fa-solid fa-file-invoice"></i></div>
+      </div>
+      <div class="stat-value">${totalBills}</div>
+      <div class="stat-foot">records</div>
+    </div>
+    <div class="stat-card gold">
+      <div class="stat-head">
+        <span class="stat-label">Total Units</span>
+        <div class="stat-icon"><i class="fa-solid fa-bolt"></i></div>
+      </div>
+      <div class="stat-value">${totalUnits.toLocaleString()}<span class="unit">kWh</span></div>
+      <div class="stat-foot">across all</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-head">
+        <span class="stat-label">Total Amount</span>
+        <div class="stat-icon"><i class="fa-solid fa-coins"></i></div>
+      </div>
+      <div class="stat-value">₨${Math.round(totalAmount).toLocaleString()}</div>
+      <div class="stat-foot">payable</div>
+    </div>
+    <div class="stat-card purple">
+      <div class="stat-head">
+        <span class="stat-label">Avg Bill</span>
+        <div class="stat-icon"><i class="fa-solid fa-chart-simple"></i></div>
+      </div>
+      <div class="stat-value">₨${Math.round(avgAmount).toLocaleString()}</div>
+      <div class="stat-foot">per record</div>
+    </div>
+  `;
+}
+
+/* ============================================================
+   CHART
+============================================================ */
+function renderChart(bills) {
+  const recent = [...bills].slice(-12);
+  const svg = document.getElementById('chart');
+  const W = 1000, H = 260;
+  const pad = { t: 40, r: 20, b: 40, l: 20 };
+  const innerW = W - pad.l - pad.r;
+  const innerH = H - pad.t - pad.b;
+  const amounts = recent.map(b => parseFloat(b.amount) || 0);
+  const max = Math.max(...amounts, 1);
+  const barW = (innerW / recent.length) * 0.55;
+  const gap = (innerW / recent.length) * 0.45;
+
+  let bars = '';
+  recent.forEach((b, i) => {
+    const amt = parseFloat(b.amount) || 0;
+    const h = (amt / max) * innerH;
+    const x = pad.l + i * (barW + gap) + gap / 2;
+    const y = pad.t + innerH - h;
+    const isLast = i === recent.length - 1;
+    bars += `
+      <rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="6"
+        fill="${isLast ? 'url(#gradLast)' : 'url(#gradBar)'}" opacity="${isLast ? 1 : 0.75}"/>
+      <text x="${x + barW/2}" y="${H - 14}" text-anchor="middle"
+        font-size="10" fill="#6d7480" font-family="Inter">#${b.id}</text>
+      <text x="${x + barW/2}" y="${y - 8}" text-anchor="middle"
+        font-size="10.5" fill="${isLast ? '#f5cd7a' : '#a8adb6'}"
+        font-family="Share Tech Mono" font-weight="${isLast ? '700' : '400'}">
+        ${Math.round(amt).toLocaleString()}
+      </text>
+    `;
+  });
+
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="gradBar" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#e5b962" stop-opacity="0.9"/>
+        <stop offset="100%" stop-color="#e5b962" stop-opacity="0.3"/>
+      </linearGradient>
+      <linearGradient id="gradLast" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#00d68f"/>
+        <stop offset="100%" stop-color="#0ea86f"/>
+      </linearGradient>
+    </defs>
+    <line x1="${pad.l}" y1="${pad.t + innerH}" x2="${W - pad.r}" y2="${pad.t + innerH}"
+      stroke="rgba(255,255,255,.08)" stroke-width="1"/>
+    ${bars}
+  `;
+}
+
+/* ============================================================
+   TABLE
+============================================================ */
+function renderTable(bills) {
+  const sorted = [...bills].reverse().slice(0, 15);
+  document.getElementById('tableSub').textContent = bills.length + ' total · showing latest 15';
+
+  document.getElementById('tableBody').innerHTML = sorted.map(b => {
+    const isDemo = b.isDemo || (b.raw && b.raw.isDemo);
+    return `
+      <tr>
+        <td><span class="bill-id">#${b.id}</span></td>
+        <td class="mono">${b.billNumber || '—'}</td>
+        <td class="mono">${b.units || '—'} kWh</td>
+        <td class="mono" style="color:var(--gold-2);font-weight:600">₨${Math.round(parseFloat(b.amount) || 0).toLocaleString()}</td>
+        <td>${isDemo ? '<span class="badge demo"><span class="d"></span>Demo</span>' : '<span class="badge live"><span class="d"></span>Live</span>'}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+/* ============================================================
+   INSIGHTS
+============================================================ */
+function renderInsights(bills) {
+  const totalUnits = bills.reduce((s, b) => s + (parseFloat(b.units) || 0), 0);
+  const totalAmount = bills.reduce((s, b) => s + (parseFloat(b.amount) || 0), 0);
+  const avgUnits = totalUnits / bills.length || 0;
+  const avgRate = totalAmount / totalUnits || 0;
+
+  const insights = [];
+
+  if (avgUnits > 300) {
+    insights.push({
+      type: 'warning',
+      icon: 'fa-triangle-exclamation',
+      title: 'Average usage is high',
+      text: `Aapka average ${Math.round(avgUnits)} units hai — 300 se upar. AC/geyser timing optimize karein.`
+    });
+  } else {
+    insights.push({
+      type: 'success',
+      icon: 'fa-circle-check',
+      title: 'Efficient usage',
+      text: `Aapka average ${Math.round(avgUnits)} units hai — bilkul efficient range mein.`
+    });
+  }
+
+  insights.push({
+    type: 'tip',
+    icon: 'fa-lightbulb',
+    title: 'Per unit cost: ₨' + avgRate.toFixed(2),
+    text: 'Ye aapka average rate hai. K-Electric slab rates ke saath compare karein.'
+  });
+
+  if (bills.length >= 3) {
+    const recent = parseFloat(bills[bills.length - 1].amount) || 0;
+    const prev = parseFloat(bills[bills.length - 2].amount) || 0;
+    const change = prev ? (((recent - prev) / prev) * 100).toFixed(1) : 0;
+    if (Math.abs(change) > 5) {
+      insights.push({
+        type: change > 0 ? 'warning' : 'success',
+        icon: change > 0 ? 'fa-arrow-up' : 'fa-arrow-down',
+        title: `Last bill ${change > 0 ? 'increased' : 'decreased'} ${Math.abs(change)}%`,
+        text: `Pichli bill se comparison.`
+      });
+    }
+  }
+
+  document.getElementById('insightsList').innerHTML = insights.map(i => `
+    <div class="insight ${i.type}">
+      <div class="insight-icon"><i class="fa-solid ${i.icon}"></i></div>
+      <div class="insight-body">
+        <div class="insight-title">${i.title}</div>
+        <div class="insight-text">${i.text}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ============================================================
+   SEND DEMO
+============================================================ */
+async function sendDemo() {
+  const units = Math.floor(200 + Math.random() * 250);
+  const demoData = {
+    billNumber: String(Math.floor(1e13 + Math.random() * 9e13)),
+    units: String(units),
+    amount: String(units * 31),
+    timestamp: Date.now(),
+    isDemo: true
+  };
+  try {
+    setStatus('Sending...', false);
+    await fetch(API + '/api/sync-from-ke', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(demoData)
+    });
+    setStatus('Sent!', false);
+    setTimeout(loadBills, 300);
+  } catch (err) {
+    setStatus('Failed', true);
+  }
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+setInterval(loadBills, 5000);
+loadBills();
+</script>
+
+</body>
+</html>
